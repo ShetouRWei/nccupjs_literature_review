@@ -1,0 +1,164 @@
+<!doctype html>
+<html lang="zh-Hant">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta
+      name="description"
+      content="個人研究閱讀書架：整理課程文獻、章節摘要與私人筆記。"
+    />
+    <title>研究閱讀書架</title>
+    <link rel="preload" as="image" href="assets/creswell-cover.jpg" />
+    <link rel="icon" href="assets/favicon.svg" type="image/svg+xml" />
+    <link rel="stylesheet" href="styles.css" />
+  </head>
+  <body>
+    <div class="paper-texture" aria-hidden="true"></div>
+    <header class="site-header">
+      <button class="brand" data-action="home" aria-label="回到首頁">
+        <span class="brand-mark">研</span>
+        <span>
+          <strong>研究閱讀書架</strong>
+          <small>Research Reading Shelf</small>
+        </span>
+      </button>
+      <div class="header-actions">
+        <span class="privacy-badge"><span></span>資料只存於此瀏覽器</span>
+        <button class="icon-button" data-action="reset" title="清除本機修改" aria-label="清除本機修改">↻</button>
+      </div>
+    </header>
+
+    <main id="app" tabindex="-1"></main>
+
+    <div id="toast" class="toast" role="status" aria-live="polite"></div>
+
+    <template id="home-template">
+      <section class="home-view view-enter">
+        <div class="hero">
+          <div>
+            <p class="eyebrow">115 學年度第 1 學期</p>
+            <h1>把讀過的文獻，<br /><em>留成可以回來的路。</em></h1>
+            <p class="hero-copy">依課程整理閱讀材料、章節摘要與你的私人筆記。</p>
+          </div>
+          <div class="hero-stats" aria-label="書架統計">
+            <div><strong id="book-count">1</strong><span>本文獻</span></div>
+            <div><strong id="chapter-count">6</strong><span>章摘要</span></div>
+            <div><strong id="note-count">0</strong><span>篇筆記</span></div>
+          </div>
+        </div>
+
+        <section class="course-section">
+          <div class="section-heading">
+            <div>
+              <p class="eyebrow">COURSE COLLECTION</p>
+              <h2 id="course-title">研究方法</h2>
+            </div>
+            <span class="term-pill" id="course-term">115-1</span>
+          </div>
+          <div class="shelf">
+            <button class="book-card" data-action="open-book">
+              <span class="book-cover-wrap">
+                <img src="assets/creswell-cover.jpg" alt="Research Design 第三版封面" class="book-cover" />
+                <span class="book-status">已整理 6 章</span>
+              </span>
+              <span class="book-info">
+                <small id="book-edition">THIRD EDITION</small>
+                <strong id="book-title">Research Design</strong>
+                <span id="book-subtitle">Qualitative, Quantitative, and Mixed Methods Approaches</span>
+                <span class="book-author" id="book-author">John W. Creswell</span>
+              </span>
+            </button>
+            <div class="empty-slot" aria-label="未來新增文獻的位置">
+              <span>＋</span>
+              <p>下一本文獻</p>
+              <small>之後可以繼續擴充</small>
+            </div>
+          </div>
+          <div class="shelf-edge" aria-hidden="true"></div>
+        </section>
+      </section>
+    </template>
+
+    <template id="book-template">
+      <section class="book-view view-enter">
+        <nav class="breadcrumb" aria-label="頁面路徑">
+          <button data-action="home">書架</button><span>／</span><strong>Research Design</strong>
+        </nav>
+        <div class="book-hero">
+          <img src="assets/creswell-cover.jpg" alt="Research Design 第三版封面" />
+          <div class="book-hero-copy">
+            <span class="course-tag" id="detail-course">研究方法 · 115-1</span>
+            <h1 id="detail-title">Research Design</h1>
+            <p id="detail-subtitle">Qualitative, Quantitative, and Mixed Methods Approaches</p>
+            <div class="meta-line"><span id="detail-author">John W. Creswell</span><i></i><span id="detail-edition">Third Edition</span></div>
+            <button class="secondary-button" data-action="toggle-meta">編輯文獻資訊</button>
+          </div>
+        </div>
+
+        <form id="metadata-form" class="metadata-form" hidden>
+          <div class="form-heading"><h2>文獻資訊</h2><p>修改只會保存在這個瀏覽器。</p></div>
+          <label>課程名稱<input name="course" required /></label>
+          <label>學期<input name="term" /></label>
+          <label class="span-2">書名<input name="title" required /></label>
+          <label class="span-2">副標題<input name="subtitle" /></label>
+          <label>作者<input name="author" /></label>
+          <label>版本<input name="edition" /></label>
+          <label>出版社<input name="publisher" /></label>
+          <label>出版年<input name="year" /></label>
+          <label class="span-2">標籤<input name="tags" placeholder="以逗號分隔" /></label>
+          <div class="form-actions span-2">
+            <button type="button" class="text-button" data-action="cancel-meta">取消</button>
+            <button type="submit" class="primary-button">儲存資訊</button>
+          </div>
+        </form>
+
+        <section class="chapters-section">
+          <div class="section-heading compact">
+            <div><p class="eyebrow">READING NOTES</p><h2>章節目錄</h2></div>
+            <p>選擇章節，開始閱讀與記錄。</p>
+          </div>
+          <div id="chapter-list" class="chapter-list"></div>
+        </section>
+      </section>
+    </template>
+
+    <template id="reader-template">
+      <section class="reader-view view-enter">
+        <div class="reader-toolbar">
+          <div class="reader-path">
+            <button data-action="open-book">← 返回章節</button>
+            <span id="reader-course">研究方法 · 115-1</span>
+          </div>
+          <div class="reader-actions">
+            <button class="secondary-button" data-action="undo-note" id="undo-button">↶ 上一步</button>
+            <button class="primary-button" data-action="save-note">儲存筆記</button>
+          </div>
+        </div>
+        <div class="reader-heading">
+          <span id="reader-number">CHAPTER 01</span>
+          <h1 id="reader-title">研究設計的選擇</h1>
+          <p id="reader-original-title">The Selection of a Research Design</p>
+        </div>
+        <div class="split-pane">
+          <article class="summary-pane">
+            <div class="pane-label"><span>AI 摘要</span><small>依原書章節順序整理</small></div>
+            <div id="summary-content" class="summary-content"></div>
+          </article>
+          <section class="notes-pane">
+            <div class="pane-label">
+              <span>我的筆記</span>
+              <small id="save-status">尚未儲存</small>
+            </div>
+            <textarea id="note-editor" spellcheck="true" placeholder="在這裡記錄你的理解、疑問、課堂補充……"></textarea>
+            <div class="note-footer">
+              <span id="word-count">0 字</span>
+              <span>Ctrl / ⌘ + S 儲存</span>
+            </div>
+          </section>
+        </div>
+      </section>
+    </template>
+
+    <script src="app.js"></script>
+  </body>
+</html>
