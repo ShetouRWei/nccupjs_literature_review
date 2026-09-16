@@ -253,14 +253,35 @@ const chapters = [
   },
 ];
 
-const STORAGE = { meta: "reading-shelf:meta", notes: "reading-shelf:notes" };
+const STORAGE = {
+  meta: "reading-shelf:meta",
+  notes: "reading-shelf:notes",
+  noteTimes: "reading-shelf:note-times",
+};
+const CLOUD_CONFIG = window.READING_SHELF_CONFIG || {};
+const cloud = window.supabase && CLOUD_CONFIG.supabaseUrl && CLOUD_CONFIG.supabaseAnonKey
+  ? window.supabase.createClient(CLOUD_CONFIG.supabaseUrl, CLOUD_CONFIG.supabaseAnonKey, {
+      auth: {
+        persistSession: true,
+        autoRefreshToken: true,
+        detectSessionInUrl: true,
+        flowType: "pkce",
+      },
+    })
+  : null;
 const app = document.querySelector("#app");
 const toast = document.querySelector("#toast");
+const authDialog = document.querySelector("#auth-dialog");
+const authForm = document.querySelector("#auth-form");
 let meta = loadJSON(STORAGE.meta, DEFAULT_META);
 let notes = loadJSON(STORAGE.notes, {});
+let noteTimes = loadJSON(STORAGE.noteTimes, {});
 let activeChapter = null;
 let noteHistory = [];
 let savedNote = "";
+let noteSaveMessage = "";
+let cloudUser = null;
+let cloudSyncing = false;
 
 function loadJSON(key, fallback) {
   try { return { ...fallback, ...JSON.parse(localStorage.getItem(key) || "{}") }; }
@@ -276,6 +297,179 @@ function showToast(message) {
   toast.classList.add("show");
   clearTimeout(showToast.timer);
   showToast.timer = setTimeout(() => toast.classList.remove("show"), 2200);
+}
+
+function setCloudStatus(message, state = "") {
+  const badge = document.querySelector("#sync-badge");
+  setText("#sync-status", message);
+  badge?.classList.toggle("is-error", state === "error");
+  badge?.classList.toggle("is-syncing", state === "syncing");
+}
+
+function updateAuthUI() {
+  setText("#auth-button", cloudUser ? "登出" : "登入同步");
+  if (!cloud) return setCloudStatus("雲端設定無法載入", "error");
+  if (cloudSyncing) return setCloudStatus("正在同步…", "syncing");
+  setCloudStatus(cloudUser ? "雲端同步已開啟" : "本機模式");
+}
+
+function openAuthDialog() {
+  if (!cloud) return showToast("雲端同步目前無法使用");
+  setText("#auth-message", "");
+  authDialog.showModal();
+  document.querySelector("#auth-email").focus();
+}
+
+function closeAuthDialog() {
+  authDialog.close();
+}
+
+async function submitAuth(event) {
+  event.preventDefault();
+  if (!cloud) return;
+  const email = document.querySelector("#auth-email").value.trim();
+  const button = document.querySelector("#auth-submit");
+  button.disabled = true;
+  setText("#auth-message", "正在寄送登入連結…");
+  const redirectTo = `${location.origin}${location.pathname}`;
+  const { error } = await cloud.auth.signInWithOtp({
+    email,
+    options: { emailRedirectTo: redirectTo },
+  });
+  button.disabled = false;
+  if (error) {
+    setText("#auth-message", `寄送失敗：${error.message}`);
+    return;
+  }
+  setText("#auth-message", "登入連結已寄出，請到信箱開啟連結。");
+}
+
+async function handleAuthAction() {
+  if (!cloudUser) return openAuthDialog();
+  const { error } = await cloud.auth.signOut({ scope: "local" });
+  if (error) return showToast(`登出失敗：${error.message}`);
+  cloudUser = null;
+  updateAuthUI();
+  showToast("此裝置已登出，筆記仍保留在本機");
+}
+
+function persistNotes() {
+  localStorage.setItem(STORAGE.notes, JSON.stringify(notes));
+  localStorage.setItem(STORAGE.noteTimes, JSON.stringify(noteTimes));
+}
+
+function refreshNotesOnScreen() {
+  const editor = document.querySelector("#note-editor");
+  if (editor && activeChapter && editor.value === savedNote) {
+    savedNote = notes[activeChapter.id] || "";
+    editor.value = savedNote;
+    noteHistory = [savedNote];
+    noteSaveMessage = savedNote ? "已同步到雲端" : "尚未儲存";
+    updateNoteUI();
+    return;
+  }
+  if (location.hash === "#/home") setText("#note-count", Object.values(notes).filter((note) => note.trim()).length);
+  if (location.hash === "#/book/creswell") renderBook();
+}
+
+async function upsertCloudNotes(rows) {
+  if (!rows.length) return { error: null };
+  return cloud.from("reading_notes").upsert(rows, {
+    onConflict: "user_id,book_id,chapter_id",
+  });
+}
+
+async function syncAllNotes() {
+  if (!cloud || !cloudUser || cloudSyncing) return;
+  cloudSyncing = true;
+  updateAuthUI();
+  const { data, error } = await cloud
+    .from("reading_notes")
+    .select("chapter_id,note,updated_at")
+    .eq("book_id", "creswell");
+
+  if (error) {
+    cloudSyncing = false;
+    setCloudStatus("雲端同步失敗", "error");
+    return showToast(`雲端讀取失敗：${error.message}`);
+  }
+
+  const remoteByChapter = Object.fromEntries((data || []).map((row) => [String(row.chapter_id), row]));
+  const uploads = [];
+  chapters.forEach((chapter) => {
+    const id = String(chapter.id);
+    const localNote = notes[id] || "";
+    const localTime = Date.parse(noteTimes[id] || "") || 0;
+    const remote = remoteByChapter[id];
+    const remoteTime = Date.parse(remote?.updated_at || "") || 0;
+
+    if (remote && remoteTime >= localTime) {
+      notes[id] = remote.note || "";
+      noteTimes[id] = remote.updated_at;
+      return;
+    }
+
+    if (localNote || localTime) {
+      const updatedAt = noteTimes[id] || new Date().toISOString();
+      noteTimes[id] = updatedAt;
+      uploads.push({
+        user_id: cloudUser.id,
+        book_id: "creswell",
+        chapter_id: chapter.id,
+        note: localNote,
+        updated_at: updatedAt,
+      });
+    }
+  });
+
+  const { error: uploadError } = await upsertCloudNotes(uploads);
+  cloudSyncing = false;
+  if (uploadError) {
+    persistNotes();
+    setCloudStatus("部分筆記待同步", "error");
+    return showToast(`雲端寫入失敗：${uploadError.message}`);
+  }
+
+  persistNotes();
+  updateAuthUI();
+  refreshNotesOnScreen();
+  showToast("筆記已與雲端同步");
+}
+
+async function syncNoteToCloud(chapterId, note, updatedAt) {
+  if (!cloud || !cloudUser) return false;
+  cloudSyncing = true;
+  updateAuthUI();
+  const { error } = await upsertCloudNotes([{
+    user_id: cloudUser.id,
+    book_id: "creswell",
+    chapter_id: Number(chapterId),
+    note,
+    updated_at: updatedAt,
+  }]);
+  cloudSyncing = false;
+  if (error) {
+    setCloudStatus("筆記待同步", "error");
+    return false;
+  }
+  updateAuthUI();
+  return true;
+}
+
+async function initializeCloud() {
+  updateAuthUI();
+  if (!cloud) return;
+  const { data, error } = await cloud.auth.getSession();
+  if (error) setCloudStatus("登入狀態讀取失敗", "error");
+  cloudUser = data?.session?.user || null;
+  updateAuthUI();
+  if (cloudUser) await syncAllNotes();
+
+  cloud.auth.onAuthStateChange((event, session) => {
+    cloudUser = session?.user || null;
+    updateAuthUI();
+    if (cloudUser && event !== "INITIAL_SESSION") setTimeout(syncAllNotes, 0);
+  });
 }
 
 function setText(selector, value) {
@@ -337,6 +531,7 @@ function renderReader(id) {
   savedNote = notes[activeChapter.id] || "";
   editor.value = savedNote;
   noteHistory = [savedNote];
+  noteSaveMessage = savedNote ? (cloudUser ? "已同步到雲端" : "已儲存在此瀏覽器") : "";
   updateNoteUI();
   editor.addEventListener("input", onNoteInput);
   editor.focus({ preventScroll: true });
@@ -354,7 +549,7 @@ function updateNoteUI() {
   const editor = document.querySelector("#note-editor");
   if (!editor) return;
   const dirty = editor.value !== savedNote;
-  setText("#save-status", dirty ? "有尚未儲存的修改" : savedNote ? "已儲存" : "尚未儲存");
+  setText("#save-status", dirty ? "有尚未儲存的修改" : noteSaveMessage || (savedNote ? "已儲存" : "尚未儲存"));
   setText("#word-count", `${editor.value.replace(/\s/g, "").length} 字`);
   document.querySelector("#undo-button").disabled = noteHistory.length <= 1;
 }
@@ -368,14 +563,22 @@ function undoNote() {
   editor.focus();
 }
 
-function saveNote() {
+async function saveNote() {
   const editor = document.querySelector("#note-editor");
   if (!editor || !activeChapter) return;
   notes[activeChapter.id] = editor.value;
-  localStorage.setItem(STORAGE.notes, JSON.stringify(notes));
+  const updatedAt = new Date().toISOString();
+  noteTimes[activeChapter.id] = updatedAt;
+  persistNotes();
   savedNote = editor.value;
+  noteSaveMessage = cloudUser ? "正在同步到雲端…" : "已儲存在此瀏覽器";
   updateNoteUI();
-  showToast("筆記已儲存在此瀏覽器");
+  if (!cloudUser) return showToast("筆記已儲存在此瀏覽器");
+
+  const synced = await syncNoteToCloud(activeChapter.id, editor.value, updatedAt);
+  noteSaveMessage = synced ? "已同步到雲端" : "已存本機，雲端同步失敗";
+  updateNoteUI();
+  showToast(synced ? "筆記已同步到雲端" : "筆記已存本機，稍後請再試同步");
 }
 
 function saveMetadata(event) {
@@ -417,15 +620,21 @@ document.addEventListener("click", (event) => {
   if (action === "cancel-meta") toggleMetadata(false);
   if (action === "undo-note") undoNote();
   if (action === "save-note") saveNote();
+  if (action === "auth") handleAuthAction();
+  if (action === "close-auth") closeAuthDialog();
   if (action === "reset" && confirm("要清除所有本機筆記與文獻資訊修改嗎？此動作無法復原。")) {
     localStorage.removeItem(STORAGE.meta);
     localStorage.removeItem(STORAGE.notes);
+    localStorage.removeItem(STORAGE.noteTimes);
     meta = { ...DEFAULT_META };
     notes = {};
+    noteTimes = {};
     showToast("本機修改已清除");
     routeView();
   }
 });
+
+authForm.addEventListener("submit", submitAuth);
 
 document.addEventListener("keydown", (event) => {
   if ((event.ctrlKey || event.metaKey) && event.key.toLowerCase() === "s") {
@@ -447,3 +656,5 @@ window.addEventListener("beforeunload", (event) => {
 
 if (!location.hash) location.hash = "#/home";
 else routeView();
+
+initializeCloud();

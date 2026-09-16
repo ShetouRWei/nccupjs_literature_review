@@ -23,7 +23,8 @@
         </span>
       </button>
       <div class="header-actions">
-        <span class="privacy-badge"><span></span>資料只存於此瀏覽器</span>
+        <span class="privacy-badge" id="sync-badge"><span></span><b id="sync-status">本機模式</b></span>
+        <button class="auth-button" data-action="auth" id="auth-button">登入同步</button>
         <button class="icon-button" data-action="reset" title="清除本機修改" aria-label="清除本機修改">↻</button>
       </div>
     </header>
@@ -31,6 +32,18 @@
     <main id="app" tabindex="-1"></main>
 
     <div id="toast" class="toast" role="status" aria-live="polite"></div>
+
+    <dialog id="auth-dialog" class="auth-dialog">
+      <form id="auth-form" method="dialog">
+        <button type="button" class="dialog-close" data-action="close-auth" aria-label="關閉">×</button>
+        <p class="eyebrow">CLOUD SYNC</p>
+        <h2>登入並同步筆記</h2>
+        <p>輸入 Email 後，我們會寄送安全登入連結。使用同一個 Email 登入其他裝置，即可取得最新筆記。</p>
+        <label>Email<input id="auth-email" name="email" type="email" autocomplete="email" required placeholder="you@example.com" /></label>
+        <p id="auth-message" class="auth-message" role="status"></p>
+        <button type="submit" class="primary-button" id="auth-submit">寄送登入連結</button>
+      </form>
+    </dialog>
 
     <template id="home-template">
       <section class="home-view view-enter">
@@ -94,7 +107,7 @@
         </div>
 
         <form id="metadata-form" class="metadata-form" hidden>
-          <div class="form-heading"><h2>文獻資訊</h2><p>修改只會保存在這個瀏覽器。</p></div>
+          <div class="form-heading"><h2>文獻資訊</h2><p>文獻資訊保存在此瀏覽器；章節筆記登入後會同步。</p></div>
           <label>課程名稱<input name="course" required /></label>
           <label>學期<input name="term" /></label>
           <label class="span-2">書名<input name="title" required /></label>
@@ -157,6 +170,8 @@
       </section>
     </template>
 
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="cloud-config.js"></script>
     <script src="app.js"></script>
   </body>
 </html>

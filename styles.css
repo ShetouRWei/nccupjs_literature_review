@@ -81,7 +81,23 @@ button { color: inherit; }
 .header-actions { display: flex; align-items: center; gap: 12px; }
 .privacy-badge { font-size: 12px; color: var(--muted); display: flex; align-items: center; gap: 7px; }
 .privacy-badge span { width: 7px; height: 7px; border-radius: 50%; background: #4c8a62; box-shadow: 0 0 0 4px rgba(76,138,98,.12); }
+.privacy-badge b { font-weight: 500; }
+.privacy-badge.is-error span { background: var(--rust); box-shadow: 0 0 0 4px rgba(166,75,42,.12); }
+.privacy-badge.is-syncing span { background: var(--gold); box-shadow: 0 0 0 4px rgba(213,169,63,.14); }
+.auth-button { border: 1px solid rgba(37,79,69,.28); background: var(--green-soft); color: var(--green); border-radius: 999px; padding: 8px 13px; cursor: pointer; font-size: 12px; font-weight: 700; }
 .icon-button { border: 1px solid var(--line); background: rgba(255,255,255,.4); width: 38px; height: 38px; border-radius: 50%; cursor: pointer; }
+
+.auth-dialog { width: min(430px, calc(100vw - 32px)); padding: 0; border: 1px solid var(--line); border-radius: 8px; color: var(--ink); background: var(--paper); box-shadow: 0 24px 80px rgba(32,37,34,.28); }
+.auth-dialog::backdrop { background: rgba(24,29,26,.45); backdrop-filter: blur(3px); }
+.auth-dialog form { position: relative; padding: 34px; }
+.auth-dialog h2 { margin: 0 0 12px; font-family: "Noto Serif TC", serif; font-size: 28px; }
+.auth-dialog form > p:not(.eyebrow):not(.auth-message) { color: var(--muted); font-size: 13px; line-height: 1.7; }
+.auth-dialog label { display: block; margin: 24px 0 10px; color: var(--muted); font-size: 11px; font-weight: 700; }
+.auth-dialog input { display: block; width: 100%; margin-top: 7px; padding: 11px 12px; border: 1px solid var(--line); border-radius: 4px; background: rgba(255,255,255,.5); outline: none; color: var(--ink); }
+.auth-dialog input:focus { border-color: var(--green); box-shadow: 0 0 0 3px rgba(37,79,69,.1); }
+.auth-dialog .primary-button { width: 100%; margin-top: 8px; }
+.dialog-close { position: absolute; top: 15px; right: 17px; border: 0; background: transparent; color: var(--muted); font-size: 23px; cursor: pointer; }
+.auth-message { min-height: 19px; margin: 8px 0; color: var(--rust); font-size: 12px; }
 
 #app { min-height: calc(100vh - 78px); }
 .home-view, .book-view { max-width: 1180px; margin: 0 auto; padding: clamp(42px, 7vw, 90px) clamp(22px, 5vw, 60px) 90px; }
@@ -207,6 +223,7 @@ button { color: inherit; }
 @media (max-width: 540px) {
   .site-header { height: 68px; }
   .brand small { display: none; }
+  .auth-button { padding: 7px 10px; }
   .hero-stats { gap: 12px; }
   .hero-stats div { padding-left: 10px; }
   .shelf { padding-left: 5px; }
