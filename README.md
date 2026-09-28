@@ -4,7 +4,7 @@
 
 - 依課程分類的書架首頁
 - 可編輯的文獻資訊
-- Creswell《Research Design》第 1–6 章摘要
+- Creswell《Research Design》第 1–7 章摘要
 - 左側摘要、右側私人筆記的分割閱讀畫面
 - 上一步、手動儲存、`Ctrl/Cmd + S` 與未儲存離開提醒
 - Email magic link 登入與 Supabase 跨裝置筆記同步
