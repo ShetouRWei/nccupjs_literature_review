@@ -317,6 +317,10 @@ const chapters = [
   },
 ];
 
+const allReadings = [...chapters, thesisArticle];
+const bookIdFor = (reading) => reading.bookId || "creswell";
+const chapterIdFor = (reading) => reading.chapterId || reading.id;
+
 const STORAGE = {
   meta: "reading-shelf:meta",
   notes: "reading-shelf:notes",
@@ -449,8 +453,8 @@ async function syncAllNotes() {
   updateAuthUI();
   const { data, error } = await cloud
     .from("reading_notes")
-    .select("chapter_id,note,updated_at")
-    .eq("book_id", "creswell");
+    .select("book_id,chapter_id,note,updated_at")
+    .in("book_id", ["creswell", thesisArticle.bookId]);
 
   if (error) {
     cloudSyncing = false;
@@ -458,13 +462,13 @@ async function syncAllNotes() {
     return showToast(`雲端讀取失敗：${error.message}`);
   }
 
-  const remoteByChapter = Object.fromEntries((data || []).map((row) => [String(row.chapter_id), row]));
+  const remoteByChapter = Object.fromEntries((data || []).map((row) => [`${row.book_id}:${row.chapter_id}`, row]));
   const uploads = [];
-  chapters.forEach((chapter) => {
+  allReadings.forEach((chapter) => {
     const id = String(chapter.id);
     const localNote = notes[id] || "";
     const localTime = Date.parse(noteTimes[id] || "") || 0;
-    const remote = remoteByChapter[id];
+    const remote = remoteByChapter[`${bookIdFor(chapter)}:${chapterIdFor(chapter)}`];
     const remoteTime = Date.parse(remote?.updated_at || "") || 0;
 
     if (remote && remoteTime >= localTime) {
@@ -478,8 +482,8 @@ async function syncAllNotes() {
       noteTimes[id] = updatedAt;
       uploads.push({
         user_id: cloudUser.id,
-        book_id: "creswell",
-        chapter_id: chapter.id,
+        book_id: bookIdFor(chapter),
+        chapter_id: chapterIdFor(chapter),
         note: localNote,
         updated_at: updatedAt,
       });
@@ -502,12 +506,14 @@ async function syncAllNotes() {
 
 async function syncNoteToCloud(chapterId, note, updatedAt) {
   if (!cloud || !cloudUser) return false;
+  const reading = allReadings.find((item) => String(item.id) === String(chapterId));
+  if (!reading) return false;
   cloudSyncing = true;
   updateAuthUI();
   const { error } = await upsertCloudNotes([{
     user_id: cloudUser.id,
-    book_id: "creswell",
-    chapter_id: Number(chapterId),
+    book_id: bookIdFor(reading),
+    chapter_id: chapterIdFor(reading),
     note,
     updated_at: updatedAt,
   }]);
@@ -583,13 +589,21 @@ function renderBook() {
 }
 
 function renderReader(id) {
-  activeChapter = chapters.find((chapter) => chapter.id === Number(id)) || chapters[0];
+  activeChapter = allReadings.find((chapter) => String(chapter.id) === String(id)) || chapters[0];
   app.replaceChildren(cloneTemplate("#reader-template"));
   setText("#reader-course", `${meta.course} · ${meta.term}`);
   setText("#reader-number", `CHAPTER ${String(activeChapter.id).padStart(2, "0")}`);
   setText("#reader-title", activeChapter.title);
   setText("#reader-original-title", activeChapter.original);
   document.querySelector("#summary-content").innerHTML = activeChapter.summary;
+  if (activeChapter === thesisArticle) {
+    setText("#reader-number", "ARTICLE · 2026.06.18");
+    const back = document.querySelector(".reader-path button");
+    back.dataset.action = "home";
+    back.textContent = "← 返回書架";
+    setText(".summary-pane .pane-label span", "中文摘要與短句翻譯");
+    setText(".summary-pane .pane-label small", "附英文原文連結");
+  }
 
   const editor = document.querySelector("#note-editor");
   savedNote = notes[activeChapter.id] || "";
@@ -667,6 +681,7 @@ function navigate(route) {
 }
 
 function routeView() {
+  if (location.hash === "#/article/thesis-whisperer-prompt") return renderReader(thesisArticle.id);
   const match = location.hash.match(/^#\/book\/creswell\/chapter\/(\d+)$/);
   if (match) return renderReader(match[1]);
   if (location.hash === "#/book/creswell") return renderBook();
@@ -680,6 +695,7 @@ document.addEventListener("click", (event) => {
   if (!action) return;
   if (action === "home") navigate("#/home");
   if (action === "open-book") navigate("#/book/creswell");
+  if (action === "open-article") navigate("#/article/thesis-whisperer-prompt");
   if (action === "toggle-meta") toggleMetadata();
   if (action === "cancel-meta") toggleMetadata(false);
   if (action === "undo-note") undoNote();

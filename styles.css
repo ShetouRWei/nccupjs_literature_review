@@ -13,6 +13,11 @@
 
 * { box-sizing: border-box; }
 
+.article-cover { display: flex; flex-direction: column; justify-content: space-between; width: 100%; aspect-ratio: 2 / 3; padding: 22px; color: #fff9ea; background: #254f45; text-align: left; }
+.article-cover strong { font: bold 46px/1.15 Georgia, serif; }
+.article-cover small { font-size: 12px; letter-spacing: .08em; }
+.article-cover > span { font-size: 16px; }
+
 html { scroll-behavior: smooth; }
 
 body {

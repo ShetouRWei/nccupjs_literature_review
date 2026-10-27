@@ -52,8 +52,8 @@
             <h1>研究閱讀書架</h1>
           </div>
           <div class="hero-stats" aria-label="書架統計">
-            <div><strong id="book-count">1</strong><span>本文獻</span></div>
-            <div><strong id="chapter-count">6</strong><span>章摘要</span></div>
+            <div><strong id="book-count">2</strong><span>本文獻</span></div>
+            <div><strong id="chapter-count">8</strong><span>篇閱讀摘要</span></div>
             <div><strong id="note-count">0</strong><span>篇筆記</span></div>
           </div>
         </div>
@@ -70,7 +70,7 @@
             <button class="book-card" data-action="open-book">
               <span class="book-cover-wrap">
                 <img src="assets/creswell-cover.jpg" alt="Research Design 第三版封面" class="book-cover" />
-                <span class="book-status">已整理 6 章</span>
+                <span class="book-status">已整理 7 章</span>
               </span>
               <span class="book-info">
                 <small id="book-edition">THIRD EDITION</small>
@@ -78,6 +78,10 @@
                 <span id="book-subtitle">Qualitative, Quantitative, and Mixed Methods Approaches</span>
                 <span class="book-author" id="book-author">John W. Creswell</span>
               </span>
+            </button>
+            <button class="book-card" data-action="open-article">
+              <span class="book-cover-wrap"><span class="article-cover"><small>THE THESIS WHISPERER</small><strong>PhD<br>≠<br>Prompt</strong><span>AI 與博士研究訓練</span></span><span class="book-status">中文摘要與短句翻譯</span></span>
+              <span class="book-info"><small>網路文章 · 2026.06.18</small><strong>PhD 的 P，不是 Prompt 的 P</strong><span>閱讀、寫作與 AI 使用的界線</span><span class="book-author">Inger Mewburn</span></span>
             </button>
             <div class="empty-slot" aria-label="未來新增文獻的位置">
               <span>＋</span>
@@ -172,6 +176,7 @@
 
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script src="cloud-config.js"></script>
+    <script src="article.js"></script>
     <script src="app.js"></script>
   </body>
 </html>
