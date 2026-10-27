@@ -5,7 +5,7 @@
 - 依課程分類的書架首頁
 - 可編輯的文獻資訊
 - Creswell《Research Design》第 1–7 章摘要
-- The Thesis Whisperer〈The ‘P’ in PhD does not stand for ‘prompt’〉中文摘要、短句翻譯及閱讀討論（非全文翻譯）
+- The Thesis Whisperer〈The ‘P’ in PhD does not stand for ‘prompt’〉使用者提供的中文全文、摘要及閱讀討論
 - 各文獻筆記獨立保存，以 book_id 與 chapter_id 區分雲端資料
 - 左側摘要、右側私人筆記的分割閱讀畫面
 - 上一步、手動儲存、`Ctrl/Cmd + S` 與未儲存離開提醒

@@ -11,7 +11,8 @@ const thesisArticle = {
     <h2>標題與短句翻譯</h2>
     <p>標題譯為「PhD 的 P，不是 Prompt 的 P」。「Prompt」指給 AI 的提示詞，標題藉此提醒博士訓練的目的。</p>
     <blockquote>“Writing helps us organise thought.”<br>「寫作幫助我們組織思想。」</blockquote>
-    <p><small>以下為中文摘要與閱讀延伸，並非全文翻譯。</small></p>
+    <p><small>本頁包含重點摘要、閱讀延伸，以及你提供的中文全文。文中第一人稱與 AI 使用聲明均屬原作者敘述。</small></p>
+    <p><button class="secondary-button" type="button" onclick="document.getElementById('article-full-translation').scrollIntoView({behavior:'smooth'})">跳至中文全文 ↓</button></p>
     <h2>重點摘要</h2>
     <ul>
       <li><strong>效率與能力養成：</strong>作者肯定 AI 的效率，但擔心博士生依賴代讀、代寫，錯過建立獨立思考能力的練習。</li>
@@ -26,5 +27,8 @@ const thesisArticle = {
       <li>讀完摘要後，我能否回到原文，指出論點的依據與限制？</li>
       <li>這次使用 AI 省下了哪個步驟？那個步驟是否正是我需要練習的能力？</li>
       <li>我是否記錄工具用途、保留核對過程，並確認課程或投稿單位的揭露要求？</li>
-    </ol>`,
+    </ol>
+    <h2 id="article-full-translation">中文全文</h2>
+    <p><small>依你提供的中文譯文刊載，保留段落與用語。文字中提及的圖片、截圖及「這裡」連結未附於提供的文字，請參照英文原文。</small></p>
+    ${thesisArticleTranslation.split(/\r?\n\s*\r?\n/).map(paragraph => `<p>${paragraph.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/\r?\n/g, "<br>")}</p>`).join("\n")}`,
 };

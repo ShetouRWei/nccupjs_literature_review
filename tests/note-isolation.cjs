@@ -2,7 +2,7 @@ const fs = require('node:fs');
 const vm = require('node:vm');
 const assert = require('node:assert/strict');
 const app = fs.readFileSync('app.js', 'utf8');
-const article = fs.readFileSync('article.js', 'utf8');
+const article = fs.readFileSync('article-translation.js', 'utf8') + '\n' + fs.readFileSync('article.js', 'utf8');
 const uploads = [];
 let remote = [
   { book_id: 'creswell', chapter_id: 1, note: 'Existing book note', updated_at: '2026-10-26T00:00:00Z' },

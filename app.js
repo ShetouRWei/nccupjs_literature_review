@@ -601,7 +601,7 @@ function renderReader(id) {
     const back = document.querySelector(".reader-path button");
     back.dataset.action = "home";
     back.textContent = "← 返回書架";
-    setText(".summary-pane .pane-label span", "中文摘要與短句翻譯");
+    setText(".summary-pane .pane-label span", "中文全文與摘要");
     setText(".summary-pane .pane-label small", "附英文原文連結");
   }
 
